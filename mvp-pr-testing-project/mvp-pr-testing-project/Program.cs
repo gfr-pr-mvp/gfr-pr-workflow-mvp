@@ -1,1 +1,5 @@
-﻿Console.WriteLine("Hello, Team!");
+﻿static void Run()
+{
+    string value = null;
+    Console.WriteLine(value.Length);
+}
