@@ -1,0 +1,225 @@
+name: PR Notification
+
+on:
+  pull_request:
+    types: [opened, reopened, closed, synchronize]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send to Teams
+        run: |
+          EVENT_NAME="${{ github.event_name }}"
+          ACTION="${{ github.event.action }}"
+
+          # Core PR data
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_BODY="${{ github.event.pull_request.body }}"
+          FILES_CHANGED=${{ github.event.pull_request.changed_files }}
+
+          # Fallbacks
+          if [ -z "$PR_TITLE" ]; then PR_TITLE="No title"; fi
+          if [ -z "$PR_BODY" ]; then PR_BODY="No description provided"; fi
+
+          ########################################
+          # ✅ HEADER (icons system)
+          ########################################
+
+          HEADER="🟡 Pull Request Created (#$PR_NUMBER)"
+
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
+            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+              HEADER="✅ PR Merged (#$PR_NUMBER)"
+            else
+              HEADER="❌ PR Closed (#$PR_NUMBER)"
+            fi
+          fi
+
+          ########################################
+          # ✅ LABELS
+          ########################################
+
+          LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | tr -d '[]"' | tr ',' ', ')
+          if [ -z "$LABELS" ]; then LABELS="None"; fi
+
+          ########################################
+          # ✅ REVIEWERS
+          ########################################
+
+          USER_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
+          TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
+
+          REVIEWERS="$USER_REVIEWERS, $TEAM_REVIEWERS"
+          REVIEWERS=$(echo "$REVIEWERS" | sed 's/^, //; s/, $//')
+          if [ -z "$REVIEWERS" ]; then REVIEWERS="None"; fi
+
+          ########################################
+          # ✅ SIZE & IMPACT
+          ########################################
+
+          ADDITIONS=${{ github.event.pull_request.additions }}
+          DELETIONS=${{ github.event.pull_request.deletions }}
+          TOTAL=$((ADDITIONS + DELETIONS))
+
+          if [ "$TOTAL" -gt 500 ]; then
+            IMPACT="🔴 High Impact"
+          elif [ "$TOTAL" -gt 100 ]; then
+            IMPACT="🟡 Medium Impact"
+          else
+            IMPACT="🟢 Low Impact"
+          fi
+
+          ########################################
+          # ✅ STATUS
+          ########################################
+
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
+            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+              STATUS="✅ Merged"
+            else
+              STATUS="❌ Closed"
+            fi
+          else
+            if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+              STATUS="📝 Draft"
+            else
+              STATUS="🟡 In Progress"
+            fi
+          fi
+
+          ########################################
+          # ✅ ALERTS SYSTEM
+          ########################################
+
+          ALERTS=""
+
+          if [ "$PR_BODY" = "No description provided" ]; then
+            ALERTS="$ALERTS❗ Missing description\n"
+          fi
+
+          if [ "$REVIEWERS" = "None" ]; then
+            ALERTS="$ALERTS❗ No reviewers assigned\n"
+          fi
+
+          if [ "$LABELS" = "None" ]; then
+            ALERTS="$ALERTS🏷 No labels assigned\n"
+          fi
+
+          if [ "$TOTAL" -gt 500 ]; then
+            ALERTS="$ALERTS🔴 Large PR detected\n"
+          fi
+
+          ########################################
+          # ✅ SENSITIVE DETECTION
+          ########################################
+
+          if [[ "$PR_TITLE" == *"auth"* ]] || [[ "$PR_TITLE" == *"config"* ]]; then
+            ALERTS="$ALERTS🔐 Possible sensitive changes\n"
+          fi
+
+          ########################################
+          # ✅ BUILD ALERT BLOCK (optional)
+          ########################################
+
+          ALERT_BLOCK=""
+
+          if [ -n "$ALERTS" ]; then
+            ALERT_BLOCK="{
+              \"type\": \"TextBlock\",
+              \"text\": \"⚠️ Alerts\",
+              \"weight\": \"Bolder\",
+              \"spacing\": \"Medium\"
+            },
+            {
+              \"type\": \"TextBlock\",
+              \"text\": \"$ALERTS\",
+              \"wrap\": true
+            },"
+          fi
+
+          ########################################
+          # ✅ SEND TO TEAMS
+          ########################################
+
+          curl -H "Content-Type: application/json" \
+          -d "{
+            \"type\": \"message\",
+            \"attachments\": [
+              {
+                \"contentType\": \"application/vnd.microsoft.card.adaptive\",
+                \"content\": {
+                  \"type\": \"AdaptiveCard\",
+                  \"version\": \"1.4\",
+                  \"body\": [
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"$HEADER\",
+                      \"weight\": \"Bolder\",
+                      \"size\": \"Medium\"
+                    },
+
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"📌 Title\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"Medium\"
+                    },
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"**$PR_TITLE**\",
+                      \"wrap\": true
+                    },
+
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"📝 Description\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"Medium\"
+                    },
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"$PR_BODY\",
+                      \"wrap\": true
+                    },
+
+                    $ALERT_BLOCK
+
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"\",
+                      \"separator\": true,
+                      \"spacing\": \"Medium\"
+                    },
+
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"📊 Details\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"Medium\"
+                    },
+
+                    {
+                      \"type\": \"FactSet\",
+                      \"facts\": [
+                        { \"title\": \"🔢 PR Number\", \"value\": \"#$PR_NUMBER\" },
+                        { \"title\": \"🧑‍💻 Author\", \"value\": \"${{ github.event.pull_request.user.login }}\" },
+                        { \"title\": \"🌿 Branch\", \"value\": \"${{ github.event.pull_request.head.ref }}\" },
+                        { \"title\": \"📦 Repository\", \"value\": \"${{ github.repository }}\" },
+                        { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
+                        { \"title\": \"🔍 Reviewers\", \"value\": \"$REVIEWERS\" },
+                        { \"title\": \"📌 Status\", \"value\": \"$STATUS\" },
+                        { \"title\": \"📏 Changes\", \"value\": \"+$ADDITIONS / -$DELETIONS\" },
+                        { \"title\": \"📂 Files\", \"value\": \"$FILES_CHANGED files\" },
+                        { \"title\": \"⚠️ Impact\", \"value\": \"$IMPACT\" }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }" \
+          ${{ secrets.TEAMS_WEBHOOK }}
