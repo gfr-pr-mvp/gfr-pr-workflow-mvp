@@ -45,9 +45,12 @@ jobs:
             fi
           fi
 
-          # ✅ Description fallback (works for both events)
+          # ✅ Description fallback
           DESCRIPTION="${{ github.event.pull_request.body }}"
           if [ -z "$DESCRIPTION" ]; then DESCRIPTION="No description provided"; fi
+
+          # ✅ PR number
+          PR_NUMBER="${{ github.event.pull_request.number }}"
 
           # Labels
           LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | tr -d '[]"' | tr ',' ', ')
@@ -74,11 +77,19 @@ jobs:
             IMPACT="🟢 Low Impact"
           fi
 
-          # Status
-          if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
-            STATUS="📝 Draft"
+          # ✅ FIXED Status logic
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
+            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+              STATUS="🎉 Merged"
+            else
+              STATUS="❌ Closed"
+            fi
           else
-            STATUS="✅ Ready"
+            if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+              STATUS="📝 Draft"
+            else
+              STATUS="✅ Ready"
+            fi
           fi
 
           curl -H "Content-Type: application/json" \
@@ -100,7 +111,7 @@ jobs:
 
                     {
                       \"type\": \"TextBlock\",
-                      \"text\": \"📌 Title\",
+                      \"text\": \"📌 Title (#$PR_NUMBER)\",
                       \"weight\": \"Bolder\",
                       \"spacing\": \"Medium\"
                     },
@@ -139,6 +150,10 @@ jobs:
                     {
                       \"type\": \"FactSet\",
                       \"facts\": [
+                        {
+                          \"title\": \"🔢 PR Number\",
+                          \"value\": \"#$PR_NUMBER\"
+                        },
                         {
                           \"title\": \"🧑‍💻 Author\",
                           \"value\": \"${{ github.event.pull_request.user.login }}\"
