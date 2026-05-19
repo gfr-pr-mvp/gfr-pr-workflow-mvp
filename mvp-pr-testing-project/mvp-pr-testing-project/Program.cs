@@ -1,1 +1,1 @@
-﻿Console.WriteLine("Hello, PR ON Teams!");
+﻿Console.WriteLine("Hello, Teams!");
