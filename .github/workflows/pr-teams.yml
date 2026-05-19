@@ -2,7 +2,7 @@ name: PR Notification
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, closed]
   pull_request_review:
     types: [submitted]
 
@@ -13,25 +13,39 @@ jobs:
       - name: Send to Teams
         run: |
           EVENT_NAME="${{ github.event_name }}"
+          ACTION="${{ github.event.action }}"
 
           # Default header
           HEADER="🚀 Pull Request Created"
 
-          # Handle review events
+          # ✅ Handle review events
           if [ "$EVENT_NAME" = "pull_request_review" ]; then
             REVIEW_STATE="${{ github.event.review.state }}"
             REVIEWER="${{ github.event.review.user.login }}"
 
-            if [ "$REVIEW_STATE" = "approved" ]; then
-              HEADER="✅ PR Approved by $REVIEWER"
-            elif [ "$REVIEW_STATE" = "changes_requested" ]; then
-              HEADER="❌ Changes Requested by $REVIEWER"
+            case "$REVIEW_STATE" in
+              approved)
+                HEADER="✅ PR Approved by $REVIEWER"
+                ;;
+              changes_requested)
+                HEADER="❌ Changes Requested by $REVIEWER"
+                ;;
+              *)
+                HEADER="💬 Review Comment by $REVIEWER"
+                ;;
+            esac
+          fi
+
+          # ✅ Handle PR closed / merged
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
+            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+              HEADER="🎉 PR Merged"
             else
-              HEADER="💬 Review Comment by $REVIEWER"
+              HEADER="❌ PR Closed without merge"
             fi
           fi
 
-          # Description fallback
+          # ✅ Description fallback (works for both events)
           DESCRIPTION="${{ github.event.pull_request.body }}"
           if [ -z "$DESCRIPTION" ]; then DESCRIPTION="No description provided"; fi
 
@@ -39,13 +53,10 @@ jobs:
           LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | tr -d '[]"' | tr ',' ', ')
           if [ -z "$LABELS" ]; then LABELS="None"; fi
 
-          # Individual reviewers
+          # Reviewers
           USER_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
-
-          # Team reviewers (CODEOWNERS)
           TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
 
-          # Merge reviewers
           REVIEWERS="$USER_REVIEWERS, $TEAM_REVIEWERS"
           REVIEWERS=$(echo "$REVIEWERS" | sed 's/^, //; s/, $//')
           if [ -z "$REVIEWERS" ]; then REVIEWERS="None"; fi
@@ -55,7 +66,6 @@ jobs:
           DELETIONS=${{ github.event.pull_request.deletions }}
           TOTAL=$((ADDITIONS + DELETIONS))
 
-          # Impact classification
           if [ "$TOTAL" -gt 500 ]; then
             IMPACT="🔴 High Impact"
           elif [ "$TOTAL" -gt 100 ]; then
@@ -64,7 +74,7 @@ jobs:
             IMPACT="🟢 Low Impact"
           fi
 
-          # Status (Draft or Ready)
+          # Status
           if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
             STATUS="📝 Draft"
           else
