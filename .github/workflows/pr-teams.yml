@@ -24,11 +24,31 @@ jobs:
           # Team reviewers (CODEOWNERS)
           TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
 
-          # Merge both
+          # Merge reviewers
           REVIEWERS="$USER_REVIEWERS, $TEAM_REVIEWERS"
           REVIEWERS=$(echo "$REVIEWERS" | sed 's/^, //; s/, $//')
-
           if [ -z "$REVIEWERS" ]; then REVIEWERS="None"; fi
+
+          # PR size
+          ADDITIONS=${{ github.event.pull_request.additions }}
+          DELETIONS=${{ github.event.pull_request.deletions }}
+          TOTAL=$((ADDITIONS + DELETIONS))
+
+          # Impact classification
+          if [ "$TOTAL" -gt 500 ]; then
+            IMPACT="🔴 High Impact"
+          elif [ "$TOTAL" -gt 100 ]; then
+            IMPACT="🟡 Medium Impact"
+          else
+            IMPACT="🟢 Low Impact"
+          fi
+
+          # Status (Draft or Ready)
+          if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+            STATUS="📝 Draft"
+          else
+            STATUS="✅ Ready"
+          fi
 
           curl -H "Content-Type: application/json" \
           -d "{
@@ -107,6 +127,18 @@ jobs:
                         {
                           \"title\": \"🔍 Reviewers\",
                           \"value\": \"$REVIEWERS\"
+                        },
+                        {
+                          \"title\": \"📌 Status\",
+                          \"value\": \"$STATUS\"
+                        },
+                        {
+                          \"title\": \"📏 Changes\",
+                          \"value\": \"+$ADDITIONS / -$DELETIONS\"
+                        },
+                        {
+                          \"title\": \"⚠️ Impact\",
+                          \"value\": \"$IMPACT\"
                         }
                       ]
                     }
