@@ -10,6 +10,10 @@ jobs:
     steps:
       - name: Send to Teams
         run: |
+          # Description fallback
+          DESCRIPTION="${{ github.event.pull_request.body }}"
+          if [ -z "$DESCRIPTION" ]; then DESCRIPTION="No description provided"; fi
+
           # Labels
           LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | tr -d '[]"' | tr ',' ', ')
           if [ -z "$LABELS" ]; then LABELS="None"; fi
@@ -38,7 +42,7 @@ jobs:
                   \"body\": [
                     {
                       \"type\": \"TextBlock\",
-                      \"text\": \"🚀 New Pull Request\",
+                      \"text\": \"🚀 Pull Request Created\",
                       \"weight\": \"Bolder\",
                       \"size\": \"Medium\"
                     },
@@ -51,7 +55,7 @@ jobs:
                     },
                     {
                       \"type\": \"TextBlock\",
-                      \"text\": \"${{ github.event.pull_request.title }}\",
+                      \"text\": \"**${{ github.event.pull_request.title }}**\",
                       \"wrap\": true
                     },
 
@@ -63,8 +67,15 @@ jobs:
                     },
                     {
                       \"type\": \"TextBlock\",
-                      \"text\": \"${{ github.event.pull_request.body }}\",
+                      \"text\": \"$DESCRIPTION\",
                       \"wrap\": true
+                    },
+
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"\",
+                      \"separator\": true,
+                      \"spacing\": \"Medium\"
                     },
 
                     {
@@ -78,7 +89,7 @@ jobs:
                       \"type\": \"FactSet\",
                       \"facts\": [
                         {
-                          \"title\": \"👤 Author\",
+                          \"title\": \"🧑‍💻 Author\",
                           \"value\": \"${{ github.event.pull_request.user.login }}\"
                         },
                         {
@@ -94,7 +105,7 @@ jobs:
                           \"value\": \"$LABELS\"
                         },
                         {
-                          \"title\": \"👥 Reviewers\",
+                          \"title\": \"🔍 Reviewers\",
                           \"value\": \"$REVIEWERS\"
                         }
                       ]
