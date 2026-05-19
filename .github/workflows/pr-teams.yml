@@ -1,0 +1,42 @@
+name: PR Notification
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send to Teams
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d '{
+            "type": "message",
+            "attachments": [
+              {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                  "type": "AdaptiveCard",
+                  "version": "1.4",
+                  "body": [
+                    {
+                      "type": "TextBlock",
+                      "text": "🚀 Nuevo PR",
+                      "weight": "Bolder",
+                      "size": "Medium"
+                    },
+                    {
+                      "type": "TextBlock",
+                      "text": "${{ github.event.pull_request.title }}"
+                    },
+                    {
+                      "type": "TextBlock",
+                      "text": "Autor: ${{ github.event.pull_request.user.login }}"
+                    }
+                  ]
+                }
+              }
+            ]
+          }' \
+          ${{ secrets.TEAMS_WEBHOOK }}
