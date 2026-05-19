@@ -8,56 +8,89 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      - name: Build PR summary (AI placeholder)
+        id: ai
+        run: |
+          echo "summary=This PR introduces changes to improve functionality. (AI summary placeholder)" >> $GITHUB_OUTPUT
+
       - name: Send to Teams
         run: |
+          LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | tr -d '[]"' | tr ',' ', ')
+          REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
+
           curl -H "Content-Type: application/json" \
-          -d '{
-            "type": "message",
-            "attachments": [
+          -d "{
+            \"type\": \"message\",
+            \"attachments\": [
               {
-                "contentType": "application/vnd.microsoft.card.adaptive",
-                "content": {
-                  "type": "AdaptiveCard",
-                  "version": "1.4",
-                  "body": [
+                \"contentType\": \"application/vnd.microsoft.card.adaptive\",
+                \"content\": {
+                  \"type\": \"AdaptiveCard\",
+                  \"version\": \"1.4\",
+                  \"body\": [
                     {
-                      "type": "TextBlock",
-                      "text": "🚀 New Pull Request",
-                      "weight": "Bolder",
-                      "size": "Medium"
+                      \"type\": \"TextBlock\",
+                      \"text\": \"🚀 New Pull Request\",
+                      \"weight\": \"Bolder\",
+                      \"size\": \"Medium\"
                     },
                     {
-                      "type": "TextBlock",
-                      "text": "**${{ github.event.pull_request.title }}**",
-                      "wrap": true
+                      \"type\": \"TextBlock\",
+                      \"text\": \"**${{ github.event.pull_request.title }}**\",
+                      \"wrap\": true
                     },
                     {
-                      "type": "FactSet",
-                      "facts": [
+                      \"type\": \"TextBlock\",
+                      \"text\": \"${{ github.event.pull_request.body }}\",
+                      \"wrap\": true,
+                      \"spacing\": \"Small\"
+                    },
+                    {
+                      \"type\": \"FactSet\",
+                      \"facts\": [
                         {
-                          "title": "Author",
-                          "value": "${{ github.event.pull_request.user.login }}"
+                          \"title\": \"Author\",
+                          \"value\": \"${{ github.event.pull_request.user.login }}\"
                         },
                         {
-                          "title": "Branch",
-                          "value": "${{ github.event.pull_request.head.ref }}"
+                          \"title\": \"Branch\",
+                          \"value\": \"${{ github.event.pull_request.head.ref }}\"
                         },
                         {
-                          "title": "Repository",
-                          "value": "${{ github.repository }}"
+                          \"title\": \"Repository\",
+                          \"value\": \"${{ github.repository }}\"
+                        },
+                        {
+                          \"title\": \"Labels\",
+                          \"value\": \"$LABELS\"
+                        },
+                        {
+                          \"title\": \"Reviewers\",
+                          \"value\": \"$REVIEWERS\"
                         }
                       ]
+                    },
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"🧠 AI Summary:\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"Medium\"
+                    },
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"${{ steps.ai.outputs.summary }}\",
+                      \"wrap\": true
                     }
                   ],
-                  "actions": [
+                  \"actions\": [
                     {
-                      "type": "Action.OpenUrl",
-                      "title": "🔗 View PR",
-                      "url": "${{ github.event.pull_request.html_url }}"
+                      \"type\": \"Action.OpenUrl\",
+                      \"title\": \"🔗 View PR\",
+                      \"url\": \"${{ github.event.pull_request.html_url }}\"
                     }
                   ]
                 }
               }
             ]
-          }' \
+          }" \
           ${{ secrets.TEAMS_WEBHOOK }}
