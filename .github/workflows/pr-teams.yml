@@ -82,6 +82,7 @@ jobs:
                           \"value\": \"$REVIEWERS\"
                         }
                       ]
+                    }
                   ],
                   \"actions\": [
                     {
