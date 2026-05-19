@@ -3,6 +3,8 @@ name: PR Notification
 on:
   pull_request:
     types: [opened, reopened]
+  pull_request_review:
+    types: [submitted]
 
 jobs:
   notify:
@@ -10,6 +12,25 @@ jobs:
     steps:
       - name: Send to Teams
         run: |
+          EVENT_NAME="${{ github.event_name }}"
+
+          # Default header
+          HEADER="🚀 Pull Request Created"
+
+          # Handle review events
+          if [ "$EVENT_NAME" = "pull_request_review" ]; then
+            REVIEW_STATE="${{ github.event.review.state }}"
+            REVIEWER="${{ github.event.review.user.login }}"
+
+            if [ "$REVIEW_STATE" = "approved" ]; then
+              HEADER="✅ PR Approved by $REVIEWER"
+            elif [ "$REVIEW_STATE" = "changes_requested" ]; then
+              HEADER="❌ Changes Requested by $REVIEWER"
+            else
+              HEADER="💬 Review Comment by $REVIEWER"
+            fi
+          fi
+
           # Description fallback
           DESCRIPTION="${{ github.event.pull_request.body }}"
           if [ -z "$DESCRIPTION" ]; then DESCRIPTION="No description provided"; fi
@@ -62,7 +83,7 @@ jobs:
                   \"body\": [
                     {
                       \"type\": \"TextBlock\",
-                      \"text\": \"🚀 Pull Request Created\",
+                      \"text\": \"$HEADER\",
                       \"weight\": \"Bolder\",
                       \"size\": \"Medium\"
                     },
