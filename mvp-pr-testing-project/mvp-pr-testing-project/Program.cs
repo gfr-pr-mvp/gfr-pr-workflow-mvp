@@ -1,1 +1,1 @@
-﻿Console.WriteLine("Hello, working notifications on Teams!");
+﻿Console.WriteLine("Hello, update cards on Teams!");
