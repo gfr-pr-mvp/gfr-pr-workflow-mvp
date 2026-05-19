@@ -22,17 +22,38 @@ jobs:
                   "body": [
                     {
                       "type": "TextBlock",
-                      "text": "🚀 Nuevo PR",
+                      "text": "🚀 New Pull Request",
                       "weight": "Bolder",
                       "size": "Medium"
                     },
                     {
                       "type": "TextBlock",
-                      "text": "${{ github.event.pull_request.title }}"
+                      "text": "**${{ github.event.pull_request.title }}**",
+                      "wrap": true
                     },
                     {
-                      "type": "TextBlock",
-                      "text": "Autor: ${{ github.event.pull_request.user.login }}"
+                      "type": "FactSet",
+                      "facts": [
+                        {
+                          "title": "Author",
+                          "value": "${{ github.event.pull_request.user.login }}"
+                        },
+                        {
+                          "title": "Branch",
+                          "value": "${{ github.event.pull_request.head.ref }}"
+                        },
+                        {
+                          "title": "Repository",
+                          "value": "${{ github.repository }}"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "Action.OpenUrl",
+                      "title": "🔗 View PR",
+                      "url": "${{ github.event.pull_request.html_url }}"
                     }
                   ]
                 }
