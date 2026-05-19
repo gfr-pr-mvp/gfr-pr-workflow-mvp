@@ -18,26 +18,22 @@ jobs:
           echo "EVENT_NAME=$EVENT_NAME"
           echo "ACTION=$ACTION"
 
-          # ✅ Safe PR extraction (important)
+          # Core PR data
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_BODY="${{ github.event.pull_request.body }}"
 
           # Fallbacks
-          if [ -z "$PR_NUMBER" ]; then PR_NUMBER="N/A"; fi
           if [ -z "$PR_TITLE" ]; then PR_TITLE="No title"; fi
           if [ -z "$PR_BODY" ]; then PR_BODY="No description provided"; fi
 
-          # ✅ Default header
-          HEADER="🚀 Pull Request Created (#$PR_NUMBER)"
+          # ✅ Default HEADER → Created
+          HEADER="🟡 Pull Request Created (#$PR_NUMBER)"
 
-          # ✅ Handle review events
+          # ✅ Handle review events (best effort)
           if [ "$EVENT_NAME" = "pull_request_review" ]; then
             REVIEW_STATE="${{ github.event.review.state }}"
             REVIEWER="${{ github.event.review.user.login }}"
-
-            echo "REVIEW_STATE=$REVIEW_STATE"
-            echo "REVIEWER=$REVIEWER"
 
             case "$REVIEW_STATE" in
               approved)
@@ -46,24 +42,18 @@ jobs:
               changes_requested)
                 HEADER="❌ Changes Requested by $REVIEWER (#$PR_NUMBER)"
                 ;;
-              commented)
-                HEADER="💬 Review Comment by $REVIEWER (#$PR_NUMBER)"
-                ;;
-              dismissed)
-                HEADER="⚠️ Review dismissed (#$PR_NUMBER)"
-                ;;
               *)
-                HEADER="🟡 PR Review Activity (#$PR_NUMBER)"
+                HEADER="💬 Review Activity (#$PR_NUMBER)"
                 ;;
             esac
           fi
 
-          # ✅ Handle PR closed / merged
+          # ✅ Handle PR closed / merged (most reliable signal)
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
-              HEADER="🎉 PR Merged (#$PR_NUMBER)"
+              HEADER="✅ PR Merged (#$PR_NUMBER)"
             else
-              HEADER="❌ PR Closed without merge (#$PR_NUMBER)"
+              HEADER="❌ PR Closed (#$PR_NUMBER)"
             fi
           fi
 
@@ -71,7 +61,7 @@ jobs:
           LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | tr -d '[]"' | tr ',' ', ')
           if [ -z "$LABELS" ]; then LABELS="None"; fi
 
-          # ✅ Reviewers (users + teams)
+          # ✅ Reviewers
           USER_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
           TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
 
@@ -79,7 +69,7 @@ jobs:
           REVIEWERS=$(echo "$REVIEWERS" | sed 's/^, //; s/, $//')
           if [ -z "$REVIEWERS" ]; then REVIEWERS="None"; fi
 
-          # ✅ PR size
+          # ✅ PR size / impact
           ADDITIONS=${{ github.event.pull_request.additions }}
           DELETIONS=${{ github.event.pull_request.deletions }}
           TOTAL=$((ADDITIONS + DELETIONS))
@@ -92,10 +82,10 @@ jobs:
             IMPACT="🟢 Low Impact"
           fi
 
-          # ✅ Status (fixed)
+          # ✅ Status (matches icon system)
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
-              STATUS="🎉 Merged"
+              STATUS="✅ Merged"
             else
               STATUS="❌ Closed"
             fi
@@ -103,7 +93,7 @@ jobs:
             if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
               STATUS="📝 Draft"
             else
-              STATUS="✅ Ready"
+              STATUS="🟡 In Progress"
             fi
           fi
 
