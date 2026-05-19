@@ -15,40 +15,22 @@ jobs:
           EVENT_NAME="${{ github.event_name }}"
           ACTION="${{ github.event.action }}"
 
-          echo "EVENT_NAME=$EVENT_NAME"
-          echo "ACTION=$ACTION"
-
           # Core PR data
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_BODY="${{ github.event.pull_request.body }}"
+          FILES_CHANGED=${{ github.event.pull_request.changed_files }}
 
           # Fallbacks
           if [ -z "$PR_TITLE" ]; then PR_TITLE="No title"; fi
           if [ -z "$PR_BODY" ]; then PR_BODY="No description provided"; fi
 
-          # ✅ Default HEADER → Created
+          ########################################
+          # ✅ HEADER (icons system)
+          ########################################
+
           HEADER="🟡 Pull Request Created (#$PR_NUMBER)"
 
-          # ✅ Handle review events (best effort)
-          if [ "$EVENT_NAME" = "pull_request_review" ]; then
-            REVIEW_STATE="${{ github.event.review.state }}"
-            REVIEWER="${{ github.event.review.user.login }}"
-
-            case "$REVIEW_STATE" in
-              approved)
-                HEADER="✅ PR Approved by $REVIEWER (#$PR_NUMBER)"
-                ;;
-              changes_requested)
-                HEADER="❌ Changes Requested by $REVIEWER (#$PR_NUMBER)"
-                ;;
-              *)
-                HEADER="💬 Review Activity (#$PR_NUMBER)"
-                ;;
-            esac
-          fi
-
-          # ✅ Handle PR closed / merged (most reliable signal)
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
               HEADER="✅ PR Merged (#$PR_NUMBER)"
@@ -57,11 +39,17 @@ jobs:
             fi
           fi
 
-          # ✅ Labels
+          ########################################
+          # ✅ LABELS
+          ########################################
+
           LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | tr -d '[]"' | tr ',' ', ')
           if [ -z "$LABELS" ]; then LABELS="None"; fi
 
-          # ✅ Reviewers
+          ########################################
+          # ✅ REVIEWERS
+          ########################################
+
           USER_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
           TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
 
@@ -69,7 +57,10 @@ jobs:
           REVIEWERS=$(echo "$REVIEWERS" | sed 's/^, //; s/, $//')
           if [ -z "$REVIEWERS" ]; then REVIEWERS="None"; fi
 
-          # ✅ PR size / impact
+          ########################################
+          # ✅ SIZE & IMPACT
+          ########################################
+
           ADDITIONS=${{ github.event.pull_request.additions }}
           DELETIONS=${{ github.event.pull_request.deletions }}
           TOTAL=$((ADDITIONS + DELETIONS))
@@ -82,7 +73,10 @@ jobs:
             IMPACT="🟢 Low Impact"
           fi
 
-          # ✅ Status (matches icon system)
+          ########################################
+          # ✅ STATUS
+          ########################################
+
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
               STATUS="✅ Merged"
@@ -96,6 +90,60 @@ jobs:
               STATUS="🟡 In Progress"
             fi
           fi
+
+          ########################################
+          # ✅ ALERTS SYSTEM
+          ########################################
+
+          ALERTS=""
+
+          if [ "$PR_BODY" = "No description provided" ]; then
+            ALERTS="$ALERTS❗ Missing description\n"
+          fi
+
+          if [ "$REVIEWERS" = "None" ]; then
+            ALERTS="$ALERTS❗ No reviewers assigned\n"
+          fi
+
+          if [ "$LABELS" = "None" ]; then
+            ALERTS="$ALERTS🏷 No labels assigned\n"
+          fi
+
+          if [ "$TOTAL" -gt 500 ]; then
+            ALERTS="$ALERTS🔴 Large PR detected\n"
+          fi
+
+          ########################################
+          # ✅ SENSITIVE DETECTION
+          ########################################
+
+          if [[ "$PR_TITLE" == *"auth"* ]] || [[ "$PR_TITLE" == *"config"* ]]; then
+            ALERTS="$ALERTS🔐 Possible sensitive changes\n"
+          fi
+
+          ########################################
+          # ✅ BUILD ALERT BLOCK (optional)
+          ########################################
+
+          ALERT_BLOCK=""
+
+          if [ -n "$ALERTS" ]; then
+            ALERT_BLOCK="{
+              \"type\": \"TextBlock\",
+              \"text\": \"⚠️ Alerts\",
+              \"weight\": \"Bolder\",
+              \"spacing\": \"Medium\"
+            },
+            {
+              \"type\": \"TextBlock\",
+              \"text\": \"$ALERTS\",
+              \"wrap\": true
+            },"
+          fi
+
+          ########################################
+          # ✅ SEND TO TEAMS
+          ########################################
 
           curl -H "Content-Type: application/json" \
           -d "{
@@ -138,6 +186,8 @@ jobs:
                       \"wrap\": true
                     },
 
+                    $ALERT_BLOCK
+
                     {
                       \"type\": \"TextBlock\",
                       \"text\": \"\",
@@ -155,50 +205,17 @@ jobs:
                     {
                       \"type\": \"FactSet\",
                       \"facts\": [
-                        {
-                          \"title\": \"🔢 PR Number\",
-                          \"value\": \"#$PR_NUMBER\"
-                        },
-                        {
-                          \"title\": \"🧑‍💻 Author\",
-                          \"value\": \"${{ github.event.pull_request.user.login }}\"
-                        },
-                        {
-                          \"title\": \"🌿 Branch\",
-                          \"value\": \"${{ github.event.pull_request.head.ref }}\"
-                        },
-                        {
-                          \"title\": \"📦 Repository\",
-                          \"value\": \"${{ github.repository }}\"
-                        },
-                        {
-                          \"title\": \"🏷 Labels\",
-                          \"value\": \"$LABELS\"
-                        },
-                        {
-                          \"title\": \"🔍 Reviewers\",
-                          \"value\": \"$REVIEWERS\"
-                        },
-                        {
-                          \"title\": \"📌 Status\",
-                          \"value\": \"$STATUS\"
-                        },
-                        {
-                          \"title\": \"📏 Changes\",
-                          \"value\": \"+$ADDITIONS / -$DELETIONS\"
-                        },
-                        {
-                          \"title\": \"⚠️ Impact\",
-                          \"value\": \"$IMPACT\"
-                        }
+                        { \"title\": \"🔢 PR Number\", \"value\": \"#$PR_NUMBER\" },
+                        { \"title\": \"🧑‍💻 Author\", \"value\": \"${{ github.event.pull_request.user.login }}\" },
+                        { \"title\": \"🌿 Branch\", \"value\": \"${{ github.event.pull_request.head.ref }}\" },
+                        { \"title\": \"📦 Repository\", \"value\": \"${{ github.repository }}\" },
+                        { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
+                        { \"title\": \"🔍 Reviewers\", \"value\": \"$REVIEWERS\" },
+                        { \"title\": \"📌 Status\", \"value\": \"$STATUS\" },
+                        { \"title\": \"📏 Changes\", \"value\": \"+$ADDITIONS / -$DELETIONS\" },
+                        { \"title\": \"📂 Files\", \"value\": \"$FILES_CHANGED files\" },
+                        { \"title\": \"⚠️ Impact\", \"value\": \"$IMPACT\" }
                       ]
-                    }
-                  ],
-                  \"actions\": [
-                    {
-                      \"type\": \"Action.OpenUrl\",
-                      \"title\": \"🔗 View PR\",
-                      \"url\": \"${{ github.event.pull_request.html_url }}\"
                     }
                   ]
                 }
