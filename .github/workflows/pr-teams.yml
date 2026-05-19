@@ -8,11 +8,6 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Build PR summary (AI placeholder)
-        id: ai
-        run: |
-          echo "summary=This PR introduces changes to improve functionality. (AI summary placeholder)" >> $GITHUB_OUTPUT
-
       - name: Send to Teams
         run: |
           # Labels
@@ -47,38 +42,59 @@ jobs:
                       \"weight\": \"Bolder\",
                       \"size\": \"Medium\"
                     },
+
                     {
                       \"type\": \"TextBlock\",
-                      \"text\": \"**${{ github.event.pull_request.title }}**\",
+                      \"text\": \"📌 Title\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"Medium\"
+                    },
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"${{ github.event.pull_request.title }}\",
                       \"wrap\": true
+                    },
+
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"📝 Description\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"Medium\"
                     },
                     {
                       \"type\": \"TextBlock\",
                       \"text\": \"${{ github.event.pull_request.body }}\",
-                      \"wrap\": true,
-                      \"spacing\": \"Small\"
+                      \"wrap\": true
                     },
+
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"📊 Details\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"Medium\"
+                    },
+
                     {
                       \"type\": \"FactSet\",
                       \"facts\": [
                         {
-                          \"title\": \"Author\",
+                          \"title\": \"👤 Author\",
                           \"value\": \"${{ github.event.pull_request.user.login }}\"
                         },
                         {
-                          \"title\": \"Branch\",
+                          \"title\": \"🌿 Branch\",
                           \"value\": \"${{ github.event.pull_request.head.ref }}\"
                         },
                         {
-                          \"title\": \"Repository\",
+                          \"title\": \"📦 Repository\",
                           \"value\": \"${{ github.repository }}\"
                         },
                         {
-                          \"title\": \"Labels\",
+                          \"title\": \"🏷 Labels\",
                           \"value\": \"$LABELS\"
                         },
                         {
-                          \"title\": \"Reviewers\",
+                          \"title\": \"👥 Reviewers\",
                           \"value\": \"$REVIEWERS\"
                         }
                       ]
