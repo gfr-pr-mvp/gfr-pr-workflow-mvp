@@ -2,7 +2,7 @@ name: PR Notification
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, reopened]
 
 jobs:
   notify:
@@ -15,8 +15,21 @@ jobs:
 
       - name: Send to Teams
         run: |
+          # Labels
           LABELS=$(echo '${{ toJson(github.event.pull_request.labels.*.name) }}' | tr -d '[]"' | tr ',' ', ')
-          REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
+          if [ -z "$LABELS" ]; then LABELS="None"; fi
+
+          # Individual reviewers
+          USER_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
+
+          # Team reviewers (CODEOWNERS)
+          TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
+
+          # Merge both
+          REVIEWERS="$USER_REVIEWERS, $TEAM_REVIEWERS"
+          REVIEWERS=$(echo "$REVIEWERS" | sed 's/^, //; s/, $//')
+
+          if [ -z "$REVIEWERS" ]; then REVIEWERS="None"; fi
 
           curl -H "Content-Type: application/json" \
           -d "{
