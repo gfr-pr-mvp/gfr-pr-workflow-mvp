@@ -20,6 +20,10 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_BODY="${{ github.event.pull_request.body }}"
           FILES_CHANGED=${{ github.event.pull_request.changed_files }}
+          
+          # Extract repo name only
+          REPO_NAME=$(basename "${{ github.repository }}")
+
 
           # Fallbacks
           if [ -z "$PR_TITLE" ]; then PR_TITLE="No title"; fi
@@ -208,7 +212,7 @@ jobs:
                         { \"title\": \"🔢 PR Number\", \"value\": \"#$PR_NUMBER\" },
                         { \"title\": \"🧑‍💻 Author\", \"value\": \"${{ github.event.pull_request.user.login }}\" },
                         { \"title\": \"🌿 Branch\", \"value\": \"${{ github.event.pull_request.head.ref }}\" },
-                        { \"title\": \"📦 Repository\", \"value\": \"${{ github.repository }}\" },
+                        { \"title\": \"📦 Repository\", \"value\": \"$REPO_NAME\" },
                         { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
                         { \"title\": \"🔍 Reviewers\", \"value\": \"$REVIEWERS\" },
                         { \"title\": \"📌 Status\", \"value\": \"$STATUS\" },
