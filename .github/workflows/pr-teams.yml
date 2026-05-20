@@ -15,16 +15,13 @@ jobs:
           EVENT_NAME="${{ github.event_name }}"
           ACTION="${{ github.event.action }}"
 
-          # Core PR data
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_BODY="${{ github.event.pull_request.body }}"
           FILES_CHANGED=${{ github.event.pull_request.changed_files }}
 
-          # ✅ FIX repo name
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
 
-          # ✅ FIX URLs (correctos)
           AUTHOR_NAME="${{ github.event.pull_request.user.login }}"
           AUTHOR_URL="https://github.com/$AUTHOR_NAME"
 
@@ -34,7 +31,6 @@ jobs:
           REPO_URL="https://github.com/${{ github.repository }}"
           PR_URL="${{ github.event.pull_request.html_url }}"
 
-          # Fallbacks
           if [ -z "$PR_TITLE" ]; then PR_TITLE="No title"; fi
           if [ -z "$PR_BODY" ]; then PR_BODY="No description provided"; fi
 
@@ -66,12 +62,8 @@ jobs:
           USER_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
           TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
 
-          REVIEWERS="$USER_REVIEWERS, $TEAM_REVIEWERS"
-          REVIEWERS=$(echo "$REVIEWERS" | sed 's/^, //; s/, $//')
-          if [ -z "$REVIEWERS" ]; then REVIEWERS="None"; fi
-
           ########################################
-          # ✅ CLICKABLE REVIEWERS (NEW)
+          # ✅ CLICKABLE REVIEWERS FIX
           ########################################
 
           CLICKABLE_REVIEWERS=""
@@ -139,7 +131,7 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
               MERGED_BY="${{ github.event.pull_request.merged_by.login }}"
-              APPROVED_BY="$REVIEWERS"
+              APPROVED_BY="$CLICKABLE_REVIEWERS"
             fi
           fi
 
@@ -168,7 +160,7 @@ jobs:
             ALERTS="$ALERTS❗ Missing description\n"
           fi
 
-          if [ "$REVIEWERS" = "None" ]; then
+          if [ "$CLICKABLE_REVIEWERS" = "None" ]; then
             ALERTS="$ALERTS❗ No reviewers assigned\n"
           fi
 
@@ -196,7 +188,7 @@ jobs:
               \"type\": \"TextBlock\",
               \"text\": \"$ALERTS\",
               \"wrap\": true
-            },"
+            }," 
           fi
 
           ########################################
@@ -218,8 +210,8 @@ jobs:
 
                     { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true },
 
-                    { \"type\": \"TextBlock\", \"text\": \"📌 Title: $PR_TITLE\", \"wrap\": true },
-                    { \"type\": \"TextBlock\", \"text\": \"📝 Description: $PR_BODY\", \"wrap\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"**📌 Title:** $PR_TITLE\", \"wrap\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"**📝 Description:** $PR_BODY\", \"wrap\": true },
 
                     $ALERT_BLOCK
 
@@ -227,7 +219,7 @@ jobs:
 
                     { \"type\": \"TextBlock\", \"text\": \"📊 Details\", \"weight\": \"Bolder\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true, \"spacing\": \"Small\" },
+                    { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true },
 
                     {
                       \"type\": \"FactSet\",
