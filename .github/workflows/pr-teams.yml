@@ -71,6 +71,31 @@ jobs:
           if [ -z "$REVIEWERS" ]; then REVIEWERS="None"; fi
 
           ########################################
+          # ✅ CLICKABLE REVIEWERS (NEW)
+          ########################################
+
+          CLICKABLE_REVIEWERS=""
+
+          if [ "$USER_REVIEWERS" != "" ]; then
+            for user in $(echo "$USER_REVIEWERS" | tr ',' ' '); do
+              CLEAN_USER=$(echo "$user" | xargs)
+              if [ -n "$CLEAN_USER" ]; then
+                CLICKABLE_REVIEWERS="$CLICKABLE_REVIEWERS[$CLEAN_USER](https://github.com/$CLEAN_USER), "
+              fi
+            done
+          fi
+
+          if [ "$TEAM_REVIEWERS" != "" ]; then
+            CLICKABLE_REVIEWERS="$CLICKABLE_REVIEWERS$TEAM_REVIEWERS"
+          fi
+
+          CLICKABLE_REVIEWERS=$(echo "$CLICKABLE_REVIEWERS" | sed 's/, $//')
+
+          if [ -z "$CLICKABLE_REVIEWERS" ]; then
+            CLICKABLE_REVIEWERS="None"
+          fi
+
+          ########################################
           # SIZE
           ########################################
 
@@ -212,7 +237,7 @@ jobs:
                         { \"title\": \"🌿 Branch\", \"value\": \"[$BRANCH_NAME]($PR_URL)\" },
                         { \"title\": \"📦 Repository\", \"value\": \"[$REPO_NAME]($REPO_URL)\" },
                         { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
-                        { \"title\": \"🔍 Reviewers\", \"value\": \"$REVIEWERS\" },
+                        { \"title\": \"🔍 Reviewers\", \"value\": \"$CLICKABLE_REVIEWERS\" },
                         { \"title\": \"📌 Status\", \"value\": \"$STATUS\" },
                         $MERGED_BLOCK
                         $APPROVED_BLOCK
