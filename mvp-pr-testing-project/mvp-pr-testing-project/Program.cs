@@ -1,1 +1,1 @@
-﻿Console.WriteLine("Hello, updating notifications!");
+﻿Console.WriteLine("Hello, notifications!");
