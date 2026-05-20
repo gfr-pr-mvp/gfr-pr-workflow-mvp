@@ -210,7 +210,7 @@ jobs:
                       \"facts\": [
                         { \"title\": \"🔢 PR Number\", \"value\": \"#$PR_NUMBER\" },
                         { \"title\": \"🧑‍💻 Author\", \"value\": \"[$AUTHOR_NAME]($AUTHOR_URL)\" },
-                        { \"title\": \"🌿 Branch\", \"value\": \"$BRANCH_NAME\" },
+                        { \"title\": \"🌿 Branch\", \"value\": \"[$BRANCH_NAME]($PR_URL)\" },
                         { \"title\": \"📦 Repository\", \"value\": \"[$REPO_NAME]($REPO_URL)\" },
                         { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
                         { \"title\": \"🔍 Reviewers\", \"value\": \"$REVIEWERS\" },
