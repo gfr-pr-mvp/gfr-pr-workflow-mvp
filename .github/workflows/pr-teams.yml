@@ -92,7 +92,7 @@ jobs:
           fi
 
           ########################################
-          # ✅ MERGE AUTHOR (NEW)
+          # ✅ MERGE AUTHOR
           ########################################
 
           MERGED_BY=""
@@ -101,6 +101,33 @@ jobs:
             if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
               MERGED_BY="${{ github.event.pull_request.merged_by.login }}"
             fi
+          fi
+
+          ########################################
+          # ✅ APPROVED BY (SIMPLIFICADO)
+          ########################################
+
+          APPROVED_BY=""
+
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
+            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+              APPROVED_BY="$REVIEWERS"
+            fi
+          fi
+
+          ########################################
+          # ✅ DYNAMIC BLOCKS
+          ########################################
+
+          MERGED_BLOCK=""
+          APPROVED_BLOCK=""
+
+          if [ -n "$MERGED_BY" ]; then
+            MERGED_BLOCK="{ \"title\": \"🔀 Merged By\", \"value\": \"$MERGED_BY\" },"
+          fi
+
+          if [ -n "$APPROVED_BY" ]; then
+            APPROVED_BLOCK="{ \"title\": \"✅ Approved By\", \"value\": \"$APPROVED_BY\" },"
           fi
 
           ########################################
@@ -134,7 +161,7 @@ jobs:
           fi
 
           ########################################
-          # ✅ BUILD ALERT BLOCK (optional)
+          # ✅ BUILD ALERT BLOCK
           ########################################
 
           ALERT_BLOCK=""
@@ -167,53 +194,14 @@ jobs:
                   \"type\": \"AdaptiveCard\",
                   \"version\": \"1.4\",
                   \"body\": [
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"$HEADER\",
-                      \"weight\": \"Bolder\",
-                      \"size\": \"Medium\"
-                    },
-
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"📌 Title\",
-                      \"weight\": \"Bolder\",
-                      \"spacing\": \"Medium\"
-                    },
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"**$PR_TITLE**\",
-                      \"wrap\": true
-                    },
-
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"📝 Description\",
-                      \"weight\": \"Bolder\",
-                      \"spacing\": \"Medium\"
-                    },
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"$PR_BODY\",
-                      \"wrap\": true
-                    },
-
+                    { \"type\": \"TextBlock\", \"text\": \"$HEADER\", \"weight\": \"Bolder\", \"size\": \"Medium\" },
+                    { \"type\": \"TextBlock\", \"text\": \"📌 Title\", \"weight\": \"Bolder\", \"spacing\": \"Medium\" },
+                    { \"type\": \"TextBlock\", \"text\": \"**$PR_TITLE**\", \"wrap\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"📝 Description\", \"weight\": \"Bolder\", \"spacing\": \"Medium\" },
+                    { \"type\": \"TextBlock\", \"text\": \"$PR_BODY\", \"wrap\": true },
                     $ALERT_BLOCK
-
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"\",
-                      \"separator\": true,
-                      \"spacing\": \"Medium\"
-                    },
-
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"📊 Details\",
-                      \"weight\": \"Bolder\",
-                      \"spacing\": \"Medium\"
-                    },
-
+                    { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"📊 Details\", \"weight\": \"Bolder\" },
                     {
                       \"type\": \"FactSet\",
                       \"facts\": [
@@ -224,7 +212,8 @@ jobs:
                         { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
                         { \"title\": \"🔍 Reviewers\", \"value\": \"$REVIEWERS\" },
                         { \"title\": \"📌 Status\", \"value\": \"$STATUS\" },
-                        { \"title\": \"🔀 Merged By\", \"value\": \"$MERGED_BY\" },
+                        $MERGED_BLOCK
+                        $APPROVED_BLOCK
                         { \"title\": \"📏 Changes\", \"value\": \"+$ADDITIONS / -$DELETIONS\" },
                         { \"title\": \"📂 Files\", \"value\": \"$FILES_CHANGED files\" },
                         { \"title\": \"⚠️ Impact\", \"value\": \"$IMPACT\" }
