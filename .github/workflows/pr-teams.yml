@@ -193,17 +193,16 @@ jobs:
 
                     { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true },
 
-                    { \"type\": \"TextBlock\", \"text\": \"📌 Title\", \"weight\": \"Bolder\" },
-                    { \"type\": \"TextBlock\", \"text\": \"**$PR_TITLE**\", \"wrap\": true },
-
-                    { \"type\": \"TextBlock\", \"text\": \"📝 Description\", \"weight\": \"Bolder\" },
-                    { \"type\": \"TextBlock\", \"text\": \"$PR_BODY\", \"wrap\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"📌 Title: $PR_TITLE\", \"wrap\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"📝 Description: $PR_BODY\", \"wrap\": true },
 
                     $ALERT_BLOCK
 
                     { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true },
 
                     { \"type\": \"TextBlock\", \"text\": \"📊 Details\", \"weight\": \"Bolder\" },
+
+                    { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true, \"spacing\": \"Small\" },
 
                     {
                       \"type\": \"FactSet\",
@@ -222,6 +221,7 @@ jobs:
                         { \"title\": \"⚠️ Impact\", \"value\": \"$IMPACT\" }
                       ]
                     }
+
                   ],
                   \"actions\": [
                     {
