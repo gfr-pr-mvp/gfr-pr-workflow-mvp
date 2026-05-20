@@ -92,6 +92,18 @@ jobs:
           fi
 
           ########################################
+          # ✅ MERGE AUTHOR (NEW)
+          ########################################
+
+          MERGED_BY=""
+
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
+            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+              MERGED_BY="${{ github.event.pull_request.merged_by.login }}"
+            fi
+          fi
+
+          ########################################
           # ✅ ALERTS SYSTEM
           ########################################
 
@@ -212,6 +224,7 @@ jobs:
                         { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
                         { \"title\": \"🔍 Reviewers\", \"value\": \"$REVIEWERS\" },
                         { \"title\": \"📌 Status\", \"value\": \"$STATUS\" },
+                        { \"title\": \"🔀 Merged By\", \"value\": \"$MERGED_BY\" },
                         { \"title\": \"📏 Changes\", \"value\": \"+$ADDITIONS / -$DELETIONS\" },
                         { \"title\": \"📂 Files\", \"value\": \"$FILES_CHANGED files\" },
                         { \"title\": \"⚠️ Impact\", \"value\": \"$IMPACT\" }
