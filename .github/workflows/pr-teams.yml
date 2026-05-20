@@ -21,9 +21,8 @@ jobs:
           PR_BODY="${{ github.event.pull_request.body }}"
           FILES_CHANGED=${{ github.event.pull_request.changed_files }}
           
-          # Extract repo name only
-          REPO_NAME=$(basename "${{ github.repository }}")
-
+          # ✅ FIXED + BETTER
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
 
           # Fallbacks
           if [ -z "$PR_TITLE" ]; then PR_TITLE="No title"; fi
@@ -108,7 +107,7 @@ jobs:
           fi
 
           ########################################
-          # ✅ APPROVED BY (SIMPLIFICADO)
+          # ✅ APPROVED BY
           ########################################
 
           APPROVED_BY=""
@@ -160,7 +159,7 @@ jobs:
           # ✅ SENSITIVE DETECTION
           ########################################
 
-          if [[ "$PR_TITLE" == *"auth"* ]] || [[ "$PR_TITLE" == *"config"* ]]; then
+          if [[ "$PR_TITLE" == *\"auth\"* ]] || [[ "$PR_TITLE" == *\"config\"* ]]; then
             ALERTS="$ALERTS🔐 Possible sensitive changes\n"
           fi
 
@@ -212,7 +211,7 @@ jobs:
                         { \"title\": \"🔢 PR Number\", \"value\": \"#$PR_NUMBER\" },
                         { \"title\": \"🧑‍💻 Author\", \"value\": \"${{ github.event.pull_request.user.login }}\" },
                         { \"title\": \"🌿 Branch\", \"value\": \"${{ github.event.pull_request.head.ref }}\" },
-                        { \"title\": \"📦 Repository\", \"value\": \"$REPO_NAME\" },
+                        { \"title\": \"📦 Repository\", \"value\": \"[$REPO_NAME](https://github.com/${{ github.repository }})\" },
                         { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
                         { \"title\": \"🔍 Reviewers\", \"value\": \"$REVIEWERS\" },
                         { \"title\": \"📌 Status\", \"value\": \"$STATUS\" },
