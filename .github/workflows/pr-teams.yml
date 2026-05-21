@@ -42,9 +42,9 @@ jobs:
 
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
-              HEADER="✅ PR Merged (#$PR_NUMBER)"
+              HEADER="✅ Pull Request Merged (#$PR_NUMBER)"
             else
-              HEADER="❌ PR Closed (#$PR_NUMBER)"
+              HEADER="✕ Pull Request Closed (#$PR_NUMBER)"
             fi
           fi
 
@@ -62,10 +62,6 @@ jobs:
           USER_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
           TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
 
-          ########################################
-          # ✅ CLICKABLE REVIEWERS FIX
-          ########################################
-
           CLICKABLE_REVIEWERS=""
 
           if [ "$USER_REVIEWERS" != "" ]; then
@@ -82,10 +78,7 @@ jobs:
           fi
 
           CLICKABLE_REVIEWERS=$(echo "$CLICKABLE_REVIEWERS" | sed 's/, $//')
-
-          if [ -z "$CLICKABLE_REVIEWERS" ]; then
-            CLICKABLE_REVIEWERS="None"
-          fi
+          if [ -z "$CLICKABLE_REVIEWERS" ]; then CLICKABLE_REVIEWERS="None"; fi
 
           ########################################
           # SIZE
@@ -95,30 +88,20 @@ jobs:
           DELETIONS=${{ github.event.pull_request.deletions }}
           TOTAL=$((ADDITIONS + DELETIONS))
 
-          if [ "$TOTAL" -gt 500 ]; then
-            IMPACT="🔴 High Impact"
-          elif [ "$TOTAL" -gt 100 ]; then
-            IMPACT="🟡 Medium Impact"
-          else
-            IMPACT="🟢 Low Impact"
-          fi
+          if [ "$TOTAL" -gt 500 ]; then IMPACT="High Impact"
+          elif [ "$TOTAL" -gt 100 ]; then IMPACT="Medium Impact"
+          else IMPACT="Low Impact"; fi
 
           ########################################
           # STATUS
           ########################################
 
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
-            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
-              STATUS="✅ Merged"
-            else
-              STATUS="❌ Closed"
-            fi
+            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then STATUS="Merged"
+            else STATUS="Closed"; fi
           else
-            if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
-              STATUS="📝 Draft"
-            else
-              STATUS="🟡 In Progress"
-            fi
+            if [ "${{ github.event.pull_request.draft }}" = "true" ]; then STATUS="Draft"
+            else STATUS="In Progress"; fi
           fi
 
           ########################################
@@ -143,11 +126,11 @@ jobs:
           APPROVED_BLOCK=""
 
           if [ -n "$MERGED_BY" ]; then
-            MERGED_BLOCK="{ \"title\": \"🔀 Merged By\", \"value\": \"$MERGED_BY\" },"
+            MERGED_BLOCK="{ \"title\": \"Merged By\", \"value\": \"$MERGED_BY\" },"
           fi
 
           if [ -n "$APPROVED_BY" ]; then
-            APPROVED_BLOCK="{ \"title\": \"✅ Approved By\", \"value\": \"$APPROVED_BY\" },"
+            APPROVED_BLOCK="{ \"title\": \"Approved By\", \"value\": \"$APPROVED_BY\" },"
           fi
 
           ########################################
@@ -157,19 +140,19 @@ jobs:
           ALERTS=""
 
           if [ "$PR_BODY" = "No description provided" ]; then
-            ALERTS="$ALERTS❗ Missing description\n"
+            ALERTS="$ALERTS• Missing description\n"
           fi
 
           if [ "$CLICKABLE_REVIEWERS" = "None" ]; then
-            ALERTS="$ALERTS❗ No reviewers assigned\n"
+            ALERTS="$ALERTS• No reviewers assigned\n"
           fi
 
           if [ "$LABELS" = "None" ]; then
-            ALERTS="$ALERTS🏷 No labels assigned\n"
+            ALERTS="$ALERTS• No labels assigned\n"
           fi
 
           if [ "$TOTAL" -gt 500 ]; then
-            ALERTS="$ALERTS🔴 Large PR detected\n"
+            ALERTS="$ALERTS• Large PR detected\n"
           fi
 
           ########################################
@@ -181,13 +164,15 @@ jobs:
           if [ -n "$ALERTS" ]; then
             ALERT_BLOCK="{
               \"type\": \"TextBlock\",
-              \"text\": \"⚠️ Alerts\",
-              \"weight\": \"Bolder\"
+              \"text\": \"⚠︎ Alerts\",
+              \"weight\": \"Bolder\",
+              \"spacing\": \"Small\"
             },
             {
               \"type\": \"TextBlock\",
               \"text\": \"$ALERTS\",
-              \"wrap\": true
+              \"wrap\": true,
+              \"spacing\": \"None\"
             }," 
           fi
 
@@ -208,34 +193,34 @@ jobs:
 
                     { \"type\": \"TextBlock\", \"text\": \"$HEADER\", \"weight\": \"Bolder\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"..............................................................................................................................\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"**📌 Title:** $PR_TITLE\", \"wrap\": true },
-                    { \"type\": \"TextBlock\", \"text\": \"**📝 Description:** $PR_BODY\", \"wrap\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"**Title:** $PR_TITLE\", \"wrap\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"**Description:** $PR_BODY\", \"wrap\": true },
 
                     $ALERT_BLOCK
 
-                    { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"..............................................................................................................................\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"📊 Details\", \"weight\": \"Bolder\" },
+                    { \"type\": \"TextBlock\", \"text\": \"Details\", \"weight\": \"Bolder\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"\", \"separator\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"..............................................................................................................................\" },
 
                     {
                       \"type\": \"FactSet\",
                       \"facts\": [
-                        { \"title\": \"🔢 PR Number\", \"value\": \"#$PR_NUMBER\" },
-                        { \"title\": \"🧑‍💻 Author\", \"value\": \"[$AUTHOR_NAME]($AUTHOR_URL)\" },
-                        { \"title\": \"🌿 Branch\", \"value\": \"[$BRANCH_NAME]($PR_URL)\" },
-                        { \"title\": \"📦 Repository\", \"value\": \"[$REPO_NAME]($REPO_URL)\" },
-                        { \"title\": \"🏷 Labels\", \"value\": \"$LABELS\" },
-                        { \"title\": \"🔍 Reviewers\", \"value\": \"$CLICKABLE_REVIEWERS\" },
-                        { \"title\": \"📌 Status\", \"value\": \"$STATUS\" },
+                        { \"title\": \"PR Number\", \"value\": \"#$PR_NUMBER\" },
+                        { \"title\": \"Author\", \"value\": \"[$AUTHOR_NAME]($AUTHOR_URL)\" },
+                        { \"title\": \"Branch\", \"value\": \"[$BRANCH_NAME]($PR_URL)\" },
+                        { \"title\": \"Repository\", \"value\": \"[$REPO_NAME]($REPO_URL)\" },
+                        { \"title\": \"Labels\", \"value\": \"$LABELS\" },
+                        { \"title\": \"Reviewers\", \"value\": \"$CLICKABLE_REVIEWERS\" },
+                        { \"title\": \"Status\", \"value\": \"$STATUS\" },
                         $MERGED_BLOCK
                         $APPROVED_BLOCK
-                        { \"title\": \"📏 Changes\", \"value\": \"+$ADDITIONS / -$DELETIONS\" },
-                        { \"title\": \"📂 Files\", \"value\": \"$FILES_CHANGED files\" },
-                        { \"title\": \"⚠️ Impact\", \"value\": \"$IMPACT\" }
+                        { \"title\": \"Changes\", \"value\": \"+$ADDITIONS / -$DELETIONS\" },
+                        { \"title\": \"Files\", \"value\": \"$FILES_CHANGED files\" },
+                        { \"title\": \"Impact\", \"value\": \"$IMPACT\" }
                       ]
                     }
 
@@ -243,8 +228,9 @@ jobs:
                   \"actions\": [
                     {
                       \"type\": \"Action.OpenUrl\",
-                      \"title\": \"🔗 View PR\",
-                      \"url\": \"$PR_URL\"
+                      \"title\": \"View PR\",
+                      \"url\": \"$PR_URL\",
+                      \"style\": \"positive\"
                     }
                   ]
                 }
