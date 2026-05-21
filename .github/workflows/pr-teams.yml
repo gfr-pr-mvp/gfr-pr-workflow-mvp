@@ -193,28 +193,18 @@ jobs:
 
                     { \"type\": \"TextBlock\", \"text\": \"$HEADER\", \"weight\": \"Bolder\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · ·\", \"spacing\": \"Small\" },
+                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · · · · · · · · · · · · · · · · · ·\", \"spacing\": \"Small\" },
 
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"Title: $PR_TITLE\",
-                      \"weight\": \"Bolder\",
-                      \"spacing\": \"None\"
-                    },
-                    {
-                      \"type\": \"TextBlock\",
-                      \"text\": \"Description: $PR_BODY\",
-                      \"weight\": \"Bolder\",
-                      \"spacing\": \"None\"
-                    },
+                    { \"type\": \"TextBlock\", \"text\": \"**Title:** $PR_TITLE\", \"wrap\": true },
+                    { \"type\": \"TextBlock\", \"text\": \"**Description:** $PR_BODY\", \"wrap\": true },
 
                     $ALERT_BLOCK
 
-                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · ·\", \"spacing\": \"Small\" },
+                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · · · · · · · · · · · · · · · · · ·\", \"spacing\": \"Small\" },
 
                     { \"type\": \"TextBlock\", \"text\": \"Details\", \"weight\": \"Bolder\", \"spacing\": \"Small\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · ·\", \"spacing\": \"Small\" },
+                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · · · · · · · · · · · · · · · · · ·\", \"spacing\": \"Small\" },
 
                     {
                       \"type\": \"FactSet\",
@@ -239,7 +229,8 @@ jobs:
                     {
                       \"type\": \"Action.OpenUrl\",
                       \"title\": \"View PR\",
-                      \"url\": \"$PR_URL\"
+                      \"url\": \"$PR_URL\",
+                      \"style\": \"positive\"
                     }
                   ]
                 }
