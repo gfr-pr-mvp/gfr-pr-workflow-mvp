@@ -62,10 +62,6 @@ jobs:
           USER_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_reviewers.*.login) }}' | tr -d '[]"' | tr ',' ', ')
           TEAM_REVIEWERS=$(echo '${{ toJson(github.event.pull_request.requested_teams.*.name) }}' | tr -d '[]"' | tr ',' ', ')
 
-          ########################################
-          # CLICKABLE REVIEWERS
-          ########################################
-
           CLICKABLE_REVIEWERS=""
 
           if [ "$USER_REVIEWERS" != "" ]; then
@@ -82,10 +78,7 @@ jobs:
           fi
 
           CLICKABLE_REVIEWERS=$(echo "$CLICKABLE_REVIEWERS" | sed 's/, $//')
-
-          if [ -z "$CLICKABLE_REVIEWERS" ]; then
-            CLICKABLE_REVIEWERS="None"
-          fi
+          if [ -z "$CLICKABLE_REVIEWERS" ]; then CLICKABLE_REVIEWERS="None"; fi
 
           ########################################
           # SIZE
@@ -95,30 +88,20 @@ jobs:
           DELETIONS=${{ github.event.pull_request.deletions }}
           TOTAL=$((ADDITIONS + DELETIONS))
 
-          if [ "$TOTAL" -gt 500 ]; then
-            IMPACT="High Impact"
-          elif [ "$TOTAL" -gt 100 ]; then
-            IMPACT="Medium Impact"
-          else
-            IMPACT="Low Impact"
-          fi
+          if [ "$TOTAL" -gt 500 ]; then IMPACT="High Impact"
+          elif [ "$TOTAL" -gt 100 ]; then IMPACT="Medium Impact"
+          else IMPACT="Low Impact"; fi
 
           ########################################
           # STATUS
           ########################################
 
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
-            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
-              STATUS="Merged"
-            else
-              STATUS="Closed"
-            fi
+            if [ "${{ github.event.pull_request.merged }}" = "true" ]; then STATUS="Merged"
+            else STATUS="Closed"; fi
           else
-            if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
-              STATUS="Draft"
-            else
-              STATUS="In Progress"
-            fi
+            if [ "${{ github.event.pull_request.draft }}" = "true" ]; then STATUS="Draft"
+            else STATUS="In Progress"; fi
           fi
 
           ########################################
@@ -182,12 +165,14 @@ jobs:
             ALERT_BLOCK="{
               \"type\": \"TextBlock\",
               \"text\": \"⚠︎ Alerts\",
-              \"weight\": \"Bolder\"
+              \"weight\": \"Bolder\",
+              \"spacing\": \"Small\"
             },
             {
               \"type\": \"TextBlock\",
               \"text\": \"$ALERTS\",
-              \"wrap\": true
+              \"wrap\": true,
+              \"spacing\": \"None\"
             }," 
           fi
 
@@ -206,20 +191,30 @@ jobs:
                   \"version\": \"1.4\",
                   \"body\": [
 
-                    { \"type\": \"TextBlock\", \"text\": \"$HEADER\", \"weight\": \"Bolder\", \"size\": \"Medium\" },
+                    { \"type\": \"TextBlock\", \"text\": \"$HEADER\", \"weight\": \"Bolder\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"────────────────────────────\" },
+                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · ·\", \"spacing\": \"Small\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"**Title => **  $PR_TITLE\", \"wrap\": true },
-                    { \"type\": \"TextBlock\", \"text\": \"**Description => **  $PR_BODY\", \"wrap\": true },
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"Title: $PR_TITLE\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"None\"
+                    },
+                    {
+                      \"type\": \"TextBlock\",
+                      \"text\": \"Description: $PR_BODY\",
+                      \"weight\": \"Bolder\",
+                      \"spacing\": \"None\"
+                    },
 
                     $ALERT_BLOCK
 
-                    { \"type\": \"TextBlock\", \"text\": \"────────────────────────────\" },
+                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · ·\", \"spacing\": \"Small\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"Details\", \"weight\": \"Bolder\" },
+                    { \"type\": \"TextBlock\", \"text\": \"Details\", \"weight\": \"Bolder\", \"spacing\": \"Small\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"────────────────────────────\" },
+                    { \"type\": \"TextBlock\", \"text\": \"· · · · · · · · · · · ·\", \"spacing\": \"Small\" },
 
                     {
                       \"type\": \"FactSet\",
