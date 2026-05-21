@@ -38,11 +38,11 @@ jobs:
           # HEADER
           ########################################
 
-          HEADER="✔ Pull Request Created (#$PR_NUMBER)"
+          HEADER="🟡 Pull Request Created (#$PR_NUMBER)"
 
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
             if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
-              HEADER="✔ Pull Request Merged (#$PR_NUMBER)"
+              HEADER="✅ Pull Request Merged (#$PR_NUMBER)"
             else
               HEADER="✕ Pull Request Closed (#$PR_NUMBER)"
             fi
@@ -193,18 +193,18 @@ jobs:
 
                     { \"type\": \"TextBlock\", \"text\": \"$HEADER\", \"weight\": \"Bolder\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"..........................................................................................................\" },
+                    { \"type\": \"TextBlock\", \"text\": \"..............................................................................................................................\" },
 
                     { \"type\": \"TextBlock\", \"text\": \"**Title:** $PR_TITLE\", \"wrap\": true },
                     { \"type\": \"TextBlock\", \"text\": \"**Description:** $PR_BODY\", \"wrap\": true },
 
                     $ALERT_BLOCK
 
-                    { \"type\": \"TextBlock\", \"text\": \"..........................................................................................................\" },
+                    { \"type\": \"TextBlock\", \"text\": \"..............................................................................................................................\" },
 
                     { \"type\": \"TextBlock\", \"text\": \"Details\", \"weight\": \"Bolder\" },
 
-                    { \"type\": \"TextBlock\", \"text\": \"..........................................................................................................\" },
+                    { \"type\": \"TextBlock\", \"text\": \"..............................................................................................................................\" },
 
                     {
                       \"type\": \"FactSet\",
